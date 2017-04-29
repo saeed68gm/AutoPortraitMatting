@@ -26,6 +26,8 @@ MAX_ITERATION = int(1e5 + 1)
 NUM_OF_CLASSESS = 2
 IMAGE_WIDTH = 600
 IMAGE_HEIGHT = 800
+train_size = 1529
+test_size = 300
 
 
 def vgg_net(weights, image):
@@ -126,7 +128,7 @@ def inference(image, keep_prob):
         fuse_2 = tf.add(conv_t2, image_net["pool3"], name="fuse_2")
 
         shape = tf.shape(image)
-        deconv_shape3 = tf.pack([shape[0], shape[1], shape[2], NUM_OF_CLASSESS])
+        deconv_shape3 = tf.stack([shape[0], shape[1], shape[2], NUM_OF_CLASSESS])
         W_t3 = utils.weight_variable([16, 16, NUM_OF_CLASSESS, deconv_shape2[3].value], name="W_t3")
         b_t3 = utils.bias_variable([NUM_OF_CLASSESS], name="b_t3")
         conv_t3 = utils.conv2d_transpose_strided(fuse_2, W_t3, b_t3, output_shape=deconv_shape3, stride=8)
@@ -147,6 +149,7 @@ def train(loss_val, var_list):
 
 
 def main(argv=None):
+    #gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
     keep_probability = tf.placeholder(tf.float32, name="keep_probabilty")
     image = tf.placeholder(tf.float32, shape=[None, IMAGE_HEIGHT, IMAGE_WIDTH, 6], name="input_image")
     annotation = tf.placeholder(tf.int32, shape=[None, IMAGE_HEIGHT, IMAGE_WIDTH, 1], name="annotation")
@@ -155,9 +158,7 @@ def main(argv=None):
     #tf.image_summary("input_image", image, max_images=2)
     #tf.image_summary("ground_truth", tf.cast(annotation, tf.uint8), max_images=2)
     #tf.image_summary("pred_annotation", tf.cast(pred_annotation, tf.uint8), max_images=2)
-    loss = tf.reduce_mean((tf.nn.sparse_softmax_cross_entropy_with_logits(logits,
-                                                                          tf.squeeze(annotation, squeeze_dims=[3]),
-                                                                          name="entropy")))
+    loss = tf.reduce_mean((tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.squeeze(annotation, squeeze_dims=[3]), logits=logits, name="entropy")))
     #tf.scalar_summary("entropy", loss)
 
     trainable_var = tf.trainable_variables()
@@ -185,8 +186,8 @@ def main(argv=None):
     print("Setting up Saver...")
     saver = tf.train.Saver()
     #summary_writer = tf.train.SummaryWriter(FLAGS.logs_dir, sess.graph)
-
-    sess.run(tf.initialize_all_variables())
+    init_op = tf.global_variables_initializer()
+    sess.run(init_op)
     ckpt = tf.train.get_checkpoint_state(FLAGS.logs_dir)
     if ckpt and ckpt.model_checkpoint_path:
         saver.restore(sess, ckpt.model_checkpoint_path)
@@ -203,9 +204,11 @@ def main(argv=None):
         _, rloss =  sess.run([train_op, loss], feed_dict=feed_dict)
         trloss += rloss
 
-        if itr % 100 == 0:
+        if itr % 100 == 0 and itr != 0:
             #train_loss, rpred = sess.run([loss, pred_annotation], feed_dict=feed_dict)
             print("Step: %d, Train_loss:%f" % (itr, trloss / 100))
+            print("saving model at iteration #:", itr)
+            saver.save(sess, FLAGS.logs_dir + "plus_model.ckpt", itr)
             trloss = 0.0
             #summary_writer.add_summary(summary_str, itr)
 
@@ -216,9 +219,8 @@ def main(argv=None):
                                                        keep_probability: 1.0})
         print("%s ---> Validation_loss: %g" % (datetime.datetime.now(), valid_loss))'''
         itr += 1
-
+        # print("next batch : # %d", itr)
         train_images, train_annotations = train_dataset_reader.next_batch()
-    saver.save(sess, FLAGS.logs_dir + "plus_model.ckpt", itr)
 
     '''elif FLAGS.mode == "visualize":
         valid_images, valid_annotations = validation_dataset_reader.get_random_batch(FLAGS.batch_size)
@@ -252,10 +254,10 @@ def pred():
         test_images, test_annotations, test_orgs = test_dataset_reader.next_batch()
         #print('getting', test_annotations[0, 200:210, 200:210])
         while len(test_annotations) > 0:
+            print("iteration #: %d", itr)
             if itr < 22:
                 test_images, test_annotations, test_orgs = test_dataset_reader.next_batch()
                 itr += 1
-                continue
             elif itr > 22:
                 break
             feed_dict = {image: test_images, annotation: test_annotations, keep_probability: 0.5}

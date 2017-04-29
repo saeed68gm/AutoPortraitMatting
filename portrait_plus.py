@@ -42,7 +42,7 @@ class BatchDatset:
             for i in range(self.batch_size):
                 rimat[i] = self.cur_imgs.pop(0)
                 ramat[i, :, :, 0] = self.cur_labels.pop(0)
-            #print('batch:', self.cur_batch, 'at img:', self.imgs[self.cur_ind], 'generate image shape', rimat.shape, 'and label shape', ramat.shape)
+            print('batch:', self.cur_batch, 'at img:', self.imgs[self.cur_ind], 'generate image shape', rimat.shape, 'and label shape', ramat.shape)
             return rimat, ramat
         return [], []
 
@@ -166,11 +166,13 @@ class BatchDatset:
                 # scale transformation
                 if scales[i] > 1.0:
                     resize_box = (round(scales[i] * w), round(scales[i] * h))
+                    resize_box = (int(resize_box[0]), int(resize_box[1]))
                     si_img = i_img.resize(resize_box, Image.ANTIALIAS)
                     sp_img = p_img.resize(resize_box, Image.ANTIALIAS)
                     sa_img = a_img.resize(resize_box, Image.ANTIALIAS)
                     crop_up, crop_down = (scales[i] - 1) / 2, (scales[i] + 1) / 2
                     crop_box = (round(crop_up * w), round(crop_up * h), round(crop_down * w), round(crop_down * h))
+                    crop_box = (int(crop_box[0]), int(crop_box[1]), int(crop_box[2]), int(crop_box[3]))
                     ci_img = si_img.crop(crop_box)
                     cp_img = sp_img.crop(crop_box)
                     ca_img = sa_img.crop(crop_box)
@@ -189,6 +191,7 @@ class BatchDatset:
                     labels.append(tmpsa_img)
                 else:
                     resize_box = (round(scales[i] * w), round(scales[i] * h))
+                    resize_box = (int(resize_box[0]), int(resize_box[1]))
                     si_img = i_img.resize(resize_box, Image.ANTIALIAS)
                     sp_img = p_img.resize(resize_box, Image.ANTIALIAS)
                     sa_img = a_img.resize(resize_box, Image.ANTIALIAS)
@@ -198,11 +201,11 @@ class BatchDatset:
                     simat = np.zeros(imat.shape, dtype=np.float)
                     samat = np.zeros(amat.shape, dtype=np.int)
                     crop_up, crop_down = (1 - scales[i]) / 2, (1 + scales[i]) / 2
-                    simat[round(crop_up * h):round(crop_down * h), round(crop_up * w):round(crop_down * w), 0] = (tmpsi_img[:, :, 2] - 104.008) / 255
-                    simat[round(crop_up * h):round(crop_down * h), round(crop_up * w):round(crop_down * w), 1] = (tmpsi_img[:, :, 1] - 116.669) / 255
-                    simat[round(crop_up * h):round(crop_down * h), round(crop_up * w):round(crop_down * w), 2] = (tmpsi_img[:, :, 0] - 122.675) / 255
-                    simat[round(crop_up * h):round(crop_down * h), round(crop_up * w):round(crop_down * w), 5] = tmpsp_img[:, :, 2] * ran5 / 255 + min5
-                    samat[round(crop_up * h):round(crop_down * h), round(crop_up * w):round(crop_down * w)] = tmpsa_img
+                    simat[int(round(crop_up * h)):int(round(crop_down * h)), int(round(crop_up * w)):int(round(crop_down * w)), 0] = (tmpsi_img[:, :, 2] - 104.008) / 255
+                    simat[int(round(crop_up * h)):int(round(crop_down * h)), int(round(crop_up * w)):int(round(crop_down * w)), 1] = (tmpsi_img[:, :, 1] - 116.669) / 255
+                    simat[int(round(crop_up * h)):int(round(crop_down * h)), int(round(crop_up * w)):int(round(crop_down * w)), 2] = (tmpsi_img[:, :, 0] - 122.675) / 255
+                    simat[int(round(crop_up * h)):int(round(crop_down * h)), int(round(crop_up * w)):int(round(crop_down * w)), 5] = tmpsp_img[:, :, 2] * ran5 / 255 + min5
+                    samat[int(round(crop_up * h)):int(round(crop_down * h)), int(round(crop_up * w)):int(round(crop_down * w))] = tmpsa_img
                     xmat, ymat = self.scaleNormalizedCord(nimat[:, :, 3], nimat[:, :, 4], scales[i] * 300)
                     simat[:, :, 3] = xmat
                     simat[:, :, 4] = ymat
