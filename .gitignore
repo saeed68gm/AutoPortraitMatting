@@ -90,3 +90,6 @@ ENV/
 
 #logs
 logs/
+Model_zoo/
+data/
+res/
