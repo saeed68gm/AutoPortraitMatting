@@ -90,5 +90,5 @@ ENV/
 
 logs/
 Model_zoo/
-res/
 data/
+res/
