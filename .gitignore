@@ -87,3 +87,8 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+logs/
+Model_zoo/
+res/
+data/
