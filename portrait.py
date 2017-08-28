@@ -14,7 +14,7 @@ class BatchDatset:
     img_width = 600
     img_height = 800
 
-    def __init__(self, imgs_path, batch_size=2):
+    def __init__(self, imgs_path, batch_size=1):
         self.imgs = sio.loadmat(imgs_path)['trainlist'][0]
         #self.labels = sio.loadmat(labels_path)['test_list'][0]
         self.batch_size = batch_size
@@ -40,7 +40,7 @@ class BatchDatset:
             for i in range(self.batch_size):
                 rimat[i] = self.cur_imgs.pop(0)
                 ramat[i, :, :, 0] = self.cur_labels.pop(0)
-            #print('batch:', self.cur_batch, 'at img:', self.imgs[self.cur_ind], 'generate image shape', rimat.shape, 'and label shape', ramat.shape)
+            print('batch:', self.cur_batch, 'at img:', self.imgs[self.cur_ind], 'generate image shape', rimat.shape, 'and label shape', ramat.shape)
             return rimat, ramat
         return [], []
 
@@ -110,8 +110,8 @@ class TestDataset:
     img_width = 600
     img_height = 800
 
-    def __init__(self, imgs_path, batch_size=2):
-        self.imgs = sio.loadmat(imgs_path)['testlist'][0]
+    def __init__(self, imgs_path, batch_size=1):
+        self.imgs = sio.loadmat(imgs_path)['list'][0]
         #self.labels = sio.loadmat(labels_path)['test_list'][0]
         self.batch_size = batch_size
         #self.max_batch = len(self.imgs) * 9 / batch_size
@@ -119,7 +119,7 @@ class TestDataset:
 
     def next_batch(self):
         cur_imgs = []
-        cur_labels = []
+        #cur_labels = []
         cur_orgs = []
         while len(cur_imgs) < self.batch_size: # if not enough, get the next image
             self.cur_ind += 1
@@ -128,43 +128,47 @@ class TestDataset:
                 #print('leaving', self.cur_ind)
                 break
             cur_name = self.imgs[self.cur_ind]
-            tmp_img, tmp_label, tmp_org = self.get_images(cur_name)
+            # tmp_img, tmp_label, tmp_org = self.get_images(cur_name)
+            tmp_img, tmp_org = self.get_images(cur_name)
             if tmp_img is not None:
                 cur_imgs.append(tmp_img)
-                cur_labels.append(tmp_label)
+                #cur_labels.append(tmp_label)
                 cur_orgs.append(tmp_org)
         if len(cur_imgs) == self.batch_size:
             #print('getting', self.cur_ind)
             rimat = np.zeros((self.batch_size, self.img_height, self.img_width, 3), dtype=np.float)
             org_mat = np.zeros((self.batch_size, self.img_height, self.img_width, 3), dtype=np.int)
-            ramat = np.zeros((self.batch_size, self.img_height, self.img_width, 1), dtype=np.int)
+            #ramat = np.zeros((self.batch_size, self.img_height, self.img_width, 1), dtype=np.int)
             self.cur_batch += 1 # output a new batch
             for i in range(self.batch_size):
                 rimat[i] = cur_imgs.pop(0)
                 org_mat[i] = cur_orgs.pop(0)
-                ramat[i, :, :, 0] = cur_labels.pop(0)
+                #ramat[i, :, :, 0] = cur_labels.pop(0)
             #print('getting', ramat[0, 200:210, 200:220])
             #print('batch:', self.cur_batch, 'at img:', self.imgs[self.cur_ind], 'generate image shape', rimat.shape, 'and label shape', ramat.shape)
-            return rimat, ramat, org_mat
-        return [], [], []
+            return rimat, org_mat
+        return [], []
+        #     return rimat, ramat, org_mat
+        # return [], [], []
 
     def get_images(self, img_name):
         stp = str(img_name)
-        if img_name < 10:
-            stp = '0000' + stp
-        elif img_name < 100:
-            stp = '000' + stp
-        elif img_name < 1000:
-            stp = '00' + stp
-        else:
-            stp = '0' + stp
-        img_path = 'data/portraitFCN_data/' + stp + '.mat'
-        alpha_path = 'data/images_mask/' + stp + '_mask.mat'
-        if os.path.exists(img_path) and os.path.exists(alpha_path):
+        # if img_name < 10:
+        #     stp = '0000' + stp
+        # elif img_name < 100:
+        #     stp = '000' + stp
+        # elif img_name < 1000:
+        #     stp = '00' + stp
+        # else:
+        #     stp = '0' + stp
+        img_path = 'data/output/rgb/' + stp + '.mat'
+        #alpha_path = 'data/images_mask/' + stp + '_mask.mat'
+        #if os.path.exists(img_path) and os.path.exists(alpha_path):
+        if os.path.exists(img_path):
             imat = sio.loadmat(img_path)['img']
-            amat = sio.loadmat(alpha_path)['mask']
+            #amat = sio.loadmat(alpha_path)['mask']
             nimat = np.array(imat, dtype=np.float)
-            namat = np.array(amat, dtype=np.int)
+            #namat = np.array(amat, dtype=np.int)
             org_mat = np.zeros(nimat.shape, dtype=np.int)
             h, w, _ = nimat.shape
             for i in range(h):
@@ -172,8 +176,10 @@ class TestDataset:
                     org_mat[i][j][0] = round(nimat[i][j][2] * 255 + 122.675)
                     org_mat[i][j][1] = round(nimat[i][j][1] * 255 + 116.669)
                     org_mat[i][j][2] = round(nimat[i][j][0] * 255 + 104.008)
-            return nimat, namat, org_mat
-        return None, None, None
+            return nimat, org_mat
+        return None, None
+        #     return nimat, namat, org_mat
+        # return None, None, None
 
 if __name__ == '__main__':
     data = BatchDatset('data/trainlist.mat')

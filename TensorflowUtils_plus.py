@@ -92,17 +92,17 @@ def get_tensor_size(tensor):
     return reduce(mul, (d.value for d in tensor.get_shape()), 1)
 
 
-def conv2d_basic(x, W, bias):
-    conv = tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding="SAME")
-    return tf.nn.bias_add(conv, bias)
+def conv2d_basic(x, W, bias, name="conv2d_basic"):
+    conv = tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding="SAME", name=name)
+    return tf.nn.bias_add(conv, bias, name=name+"bias_add")
 
 
-def conv2d_strided(x, W, b):
-    conv = tf.nn.conv2d(x, W, strides=[1, 2, 2, 1], padding="SAME")
-    return tf.nn.bias_add(conv, b)
+def conv2d_strided(x, W, b, name="conv2d_strided"):
+    conv = tf.nn.conv2d(x, W, strides=[1, 2, 2, 1], padding="SAME", name=name)
+    return tf.nn.bias_add(conv, b, name=name+"bias_add")
 
 
-def conv2d_transpose_strided(x, W, b, output_shape=None, stride = 2):
+def conv2d_transpose_strided(x, W, b, output_shape=None, stride = 2, name="conv2d_transpose_strided"):
     # print x.get_shape()
     # print W.get_shape()
     if output_shape is None:
@@ -111,20 +111,20 @@ def conv2d_transpose_strided(x, W, b, output_shape=None, stride = 2):
         output_shape[2] *= 2
         output_shape[3] = W.get_shape().as_list()[2]
     # print output_shape
-    conv = tf.nn.conv2d_transpose(x, W, output_shape, strides=[1, stride, stride, 1], padding="SAME")
-    return tf.nn.bias_add(conv, b)
+    conv = tf.nn.conv2d_transpose(x, W, output_shape, strides=[1, stride, stride, 1], padding="SAME", name=name)
+    return tf.nn.bias_add(conv, b, name=name+"bias_add")
 
 
 def leaky_relu(x, alpha=0.0, name=""):
     return tf.maximum(alpha * x, x, name)
 
 
-def max_pool_2x2(x):
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
+def max_pool_2x2(x, name="max_pool_2x2"):
+    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME", name=name)
 
 
-def avg_pool_2x2(x):
-    return tf.nn.avg_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME")
+def avg_pool_2x2(x, name="ave_pool_2x2"):
+    return tf.nn.avg_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="SAME", name=name)
 
 
 def local_response_norm(x):

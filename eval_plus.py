@@ -44,6 +44,7 @@ class TestDataset:
     def get_images(self, img_name):
         stp = str(img_name)
         img_path = 'data/output/' + stp + '.mat'
+        import pdb; pdb.set_trace()  # breakpoint 6a66f711 //
         if os.path.exists(img_path):
             imat = sio.loadmat(img_path)['img']
             nimat = np.array(imat, dtype=np.float)
